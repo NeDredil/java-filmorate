@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -58,13 +60,21 @@ public class FilmService {
     }
 
     public void addLike(int id, int userId) {
-        filmStorage.findFilm(id).getLikes().add(userService.findUser(userId).getId());
+        Film film = filmStorage.findFilm(id);
+        Set<Long> likes = film.getLikes();
+        User user = userService.findUser(userId);
+        long idUser = user.getId();
+        likes.add(idUser);
         log.info("Лайк добавлен.");
     }
 
     public void deleteLike(int id, int userId) {
-        filmStorage.findFilm(id).getLikes().remove(userService.findUser(userId).getId());
-        log.info("Лайк удален.");
+        Film film = filmStorage.findFilm(id);
+        User user = userService.findUser(userId);
+        if (film != null && user != null) {
+            film.getLikes().remove(user.getId());
+            log.info("Лайк удален.");
+        }
     }
 
     private void validate(Film film) {

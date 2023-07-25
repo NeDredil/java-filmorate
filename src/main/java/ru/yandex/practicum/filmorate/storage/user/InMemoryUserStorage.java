@@ -6,12 +6,16 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
 public class InMemoryUserStorage implements UserStorage {
 
     private long idGenerator = 1;
+
+    Map<Long, User> userData = new HashMap<>();
 
     @Override
     public User findUser(long id) {

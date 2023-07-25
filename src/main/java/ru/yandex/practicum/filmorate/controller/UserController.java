@@ -45,13 +45,14 @@ public class UserController {
         userService.deleteUser(id);
     }
 
-    @GetMapping(value = {"/{id}/friends", "/{id}/friends/common/{otherId}"})
-    public List<User> getFriends(@PathVariable("id") int id, @PathVariable(required = false) Integer otherId) {
-        if (otherId == null) {
-            return userService.getFriends(id);
-        } else {
-            return userService.getCommonFriends(id, otherId);
-        }
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable("id") int id) {
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable("id") int id, @PathVariable("otherId") int otherId) {
+        return userService.getCommonFriends(id, otherId);
     }
 
     @PutMapping("/{id}/friends/{friendId}")

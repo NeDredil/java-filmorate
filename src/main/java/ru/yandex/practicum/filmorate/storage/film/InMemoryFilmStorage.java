@@ -6,12 +6,16 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
 
     private long idGenerator = 1;
+
+    Map<Long, Film> filmData = new HashMap<>();
 
     @Override
     public Film findFilm(long id) {
