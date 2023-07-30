@@ -166,7 +166,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private Film makeFilm(ResultSet rs) throws SQLException {
         long tempId = rs.getLong("film_id");
-        String sqlGenre = "SELECT g.* FROM GENRE g INNER JOIN FILM_GENRE fg ON g.GENRE_ID = fg.GENRE_ID WHERE fg.FILM_ID=?";
+        String sqlGenre = "SELECT * FROM GENRE WHERE GENRE_ID IN (SELECT GENRE_ID FROM FILM_GENRE WHERE FILM_ID=?);";
         List<Genre> genres = jdbcTemplate.query(sqlGenre, (result, rowNum) -> genreDbStorage.makeGenre(result), tempId);
         return Film.builder()
                 .id(rs.getLong("film_id"))
@@ -178,4 +178,5 @@ public class FilmDbStorage implements FilmStorage {
                 .genres(genres)
                 .build();
     }
+
 }
