@@ -6,8 +6,6 @@ import java.util.*;
 
 public interface FilmStorage {
 
-    String notFoundFilm = "Фильм с id = %s не найден.";
-
     Film findFilm(long id);
 
     Collection<Film> findAllFilms();

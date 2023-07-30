@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
@@ -12,12 +13,13 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -79,7 +81,7 @@ public class FilmDbStorage implements FilmStorage {
     public Film updateFilm(Film film) {
         long tempId = film.getId();
         exists(tempId);
-        String updateSql = "UPDATE FILMS SET TITEL=?, DESCRIPTION=?, RELEASEDATE=?, DURATION=?, RATING_ID=? " +
+        String updateSql = "UPDATE FILMS SET TITLE=?, DESCRIPTION=?, RELEASEDATE=?, DURATION=?, RATING_ID=? " +
                 "WHERE FILM_ID=?;";
         jdbcTemplate.update(updateSql,
                 film.getName(),
@@ -95,13 +97,24 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void updateGenreForFilm(long filmId, List<Genre> genres) {
-        String sqlDelete = "DELETE FROM FILM_GENRE WHERE FILM_ID=?;";
+        String sqlDelete = "DELETE FROM FILM_GENRE WHERE FILM_ID=?";
         jdbcTemplate.update(sqlDelete, filmId);
-        if (genres != null) {
-            String sqlInsert = "INSERT INTO FILM_GENRE (FILM_ID, GENRE_ID) VALUES(?, ?);";
-            for (Genre genre : genres) {
-                jdbcTemplate.update(sqlInsert, filmId, genre.getId());
-            }
+
+        if (genres != null && !genres.isEmpty()) {
+            String sqlInsert = "INSERT INTO FILM_GENRE (FILM_ID, GENRE_ID) VALUES (?, ?)";
+            jdbcTemplate.batchUpdate(sqlInsert, new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    Genre genre = genres.get(i);
+                    ps.setLong(1, filmId);
+                    ps.setLong(2, genre.getId());
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return genres.size();
+                }
+            });
         }
     }
 
@@ -144,23 +157,20 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    public boolean exists(long id) {
+    public void exists(long id) {
         String sqlQuery = "SELECT COUNT(*) FROM FILMS WHERE FILM_ID=?";
-        int result = jdbcTemplate.queryForObject(sqlQuery, Integer.class, id);
-        if (result != 1) {
-            throw new NotFoundException(String.format(notFoundFilm, id));
-        }
-        return result == 1;
+        Optional.ofNullable(jdbcTemplate.queryForObject(sqlQuery, Integer.class, id))
+                .filter(count -> count == 1)
+                .orElseThrow(() -> new NotFoundException(String.format("Фильм с id = %s не найден.", id)));
     }
 
     private Film makeFilm(ResultSet rs) throws SQLException {
         long tempId = rs.getLong("film_id");
-        String sqlGenre = "SELECT * FROM GENRE WHERE GENRE_ID IN (SELECT GENRE_ID FROM FILM_GENRE WHERE FILM_ID=?);";
-        List<Genre> genres = new ArrayList<>();
-        genres = jdbcTemplate.query(sqlGenre, (result, rowNum) -> genreDbStorage.makeGenre(result), tempId);
+        String sqlGenre = "SELECT g.* FROM GENRE g INNER JOIN FILM_GENRE fg ON g.GENRE_ID = fg.GENRE_ID WHERE fg.FILM_ID=?";
+        List<Genre> genres = jdbcTemplate.query(sqlGenre, (result, rowNum) -> genreDbStorage.makeGenre(result), tempId);
         return Film.builder()
                 .id(rs.getLong("film_id"))
-                .name(rs.getString("titel"))
+                .name(rs.getString("title"))
                 .description(rs.getString("description"))
                 .releaseDate(LocalDate.parse(rs.getString("releaseDate")))
                 .duration(rs.getInt("duration"))
@@ -168,5 +178,4 @@ public class FilmDbStorage implements FilmStorage {
                 .genres(genres)
                 .build();
     }
-
 }

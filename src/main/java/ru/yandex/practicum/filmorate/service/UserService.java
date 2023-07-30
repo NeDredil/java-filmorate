@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -11,14 +11,10 @@ import java.util.Collection;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserStorage userStorage;
-
-    @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
-    }
 
     public User findUser(long id) {
         return userStorage.findUser(id);
@@ -59,14 +55,15 @@ public class UserService {
     }
 
     private void validate(User user) {
-        if (user.getLogin().contains(" ")) {
-            log.info("Логин не может содержать пробелы: {}.", user.getLogin());
-            throw new ValidationException("Логин не может содержать пробелы.");
+        String login = user.getLogin();
+        if (login.contains(" ")) {
+            log.info("Login cannot contain spaces: {}.", login);
+            throw new ValidationException("Login cannot contain spaces.");
         }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.info("Автоматически добавлено имя пользователя: {}.", user.getName());
+        String name = user.getName();
+        if (name == null || name.isBlank()) {
+            user.setName(login);
+            log.info("Automatically added user name: {}.", login);
         }
     }
-
 }

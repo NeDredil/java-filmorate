@@ -36,7 +36,7 @@ public class Film {
 
     public Map<String, Object> toMap() {
         Map<String, Object> values = new HashMap<>();
-        values.put("titel", name);
+        values.put("title", name);
         values.put("description", description);
         values.put("releaseDate", releaseDate);
         values.put("duration", duration);

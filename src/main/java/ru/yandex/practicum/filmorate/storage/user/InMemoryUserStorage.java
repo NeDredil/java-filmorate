@@ -15,6 +15,7 @@ public class InMemoryUserStorage implements UserStorage {
     Map<Long, User> userData = new HashMap<>();
     Map<Long, Set<Long>> friends = new TreeMap<>();
 
+    private final String notFoundUser = "Пользователь с id = %s не найден.";
     private long idGenerator = 1;
 
     @Override

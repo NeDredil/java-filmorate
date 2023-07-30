@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -108,24 +109,26 @@ public class UserDbStorage implements UserStorage {
     public Collection<User> getCommonFriends(long id, long otherId) {
         exists(id);
         exists(otherId);
-        String sql = "SELECT * FROM USERS WHERE USER_ID IN " +
-                "(SELECT OTHER_USER_ID FROM FRIENDS WHERE USER_ID=?) " +
-                "AND USER_ID IN (SELECT OTHER_USER_ID FROM FRIENDS WHERE USER_ID=?)";
+
+        String sql = "SELECT U.* " +
+                "FROM USERS U " +
+                "JOIN FRIENDS F1 ON U.USER_ID = F1.OTHER_USER_ID AND F1.USER_ID = ? " +
+                "JOIN FRIENDS F2 ON U.USER_ID = F2.OTHER_USER_ID AND F2.USER_ID = ?";
+
         Collection<User> commonFriends = jdbcTemplate.query(sql, (rs, rowNum) -> makeUser(rs), id, otherId);
+
         log.info("Количество общих друзей: {}, у пользователей с id: {} и {}.", commonFriends.size(), id, otherId);
+
         return commonFriends;
     }
 
-
-    boolean exists(long id) {
+    public void exists(long id) {
         String sqlQuery = "SELECT COUNT(*) FROM USERS WHERE USER_ID=?";
-        int result = jdbcTemplate.queryForObject(sqlQuery, Integer.class, id);
-        if (result != 1) {
-            log.info("Пользователь с идентификатором {} не найден.", id);
-            throw new NotFoundException(String.format(notFoundUser, id));
-        }
-        return result == 1;
+        Optional.ofNullable(jdbcTemplate.queryForObject(sqlQuery, Integer.class, id))
+                .filter(count -> count == 1)
+                .orElseThrow(() -> new NotFoundException(String.format("Пользователь с id = %s не найден.", id)));
     }
+
 
     private User makeUser(ResultSet rs) throws SQLException {
         return User.builder()

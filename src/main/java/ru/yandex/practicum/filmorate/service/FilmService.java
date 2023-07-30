@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -12,15 +12,11 @@ import java.util.Collection;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilmService {
 
-    private static final LocalDate startCinema = LocalDate.of(1895, 12, 28);
+    private static final LocalDate START_CINEMA = LocalDate.of(1895, 12, 28);
     private final FilmStorage filmStorage;
-
-    @Autowired
-    public FilmService(FilmStorage filmStorage) {
-        this.filmStorage = filmStorage;
-    }
 
     public Collection<Film> findAllFilms() {
         return filmStorage.findAllFilms();
@@ -35,12 +31,12 @@ public class FilmService {
     }
 
     public Film createFilm(Film film) {
-        validate(film);
+        validateReleaseDate(film.getReleaseDate());
         return filmStorage.createFilm(film);
     }
 
     public Film updateFilm(Film film) {
-        validate(film);
+        validateReleaseDate(film.getReleaseDate());
         return filmStorage.updateFilm(film);
     }
 
@@ -56,11 +52,11 @@ public class FilmService {
         filmStorage.deleteLike(id, userId);
     }
 
-    private void validate(Film film) {
-        if (film.getReleaseDate().isBefore(startCinema)) {
-            log.info("Дата релиза: {} — должна быть не раньше 28 декабря 1895 года.", film.getReleaseDate());
-            throw new ValidationException("Дата релиза — не раньше 28 декабря 1895 года.");
+    private void validateReleaseDate(LocalDate releaseDate) {
+        if (releaseDate.isBefore(START_CINEMA)) {
+            String message = "Release date should not be earlier than December 28, 1895.";
+            log.info("Invalid release date: {}. {}", releaseDate, message);
+            throw new ValidationException(message);
         }
     }
-
 }

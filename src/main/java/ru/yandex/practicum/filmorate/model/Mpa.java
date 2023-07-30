@@ -1,12 +1,13 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import javax.validation.constraints.NotNull;
 
 @Builder
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode
 public class Mpa {
 
     @NotNull

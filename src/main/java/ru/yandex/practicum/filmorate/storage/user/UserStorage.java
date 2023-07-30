@@ -6,8 +6,6 @@ import java.util.*;
 
 public interface UserStorage {
 
-    String notFoundUser = "Пользователь с id = %s не найден.";
-
     User findUser(long id);
 
     Collection<User> findAllUsers();

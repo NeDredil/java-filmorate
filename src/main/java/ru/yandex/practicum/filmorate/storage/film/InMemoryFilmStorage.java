@@ -23,6 +23,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     private final UserStorage userStorage;
     private final GenreStorage genreStorage;
     private final MpaStorage mpaStorage;
+    private final String notFoundFilm = "Фильм с id = %s не найден.";
+
 
     @Autowired
     public InMemoryFilmStorage(UserStorage userStorage, GenreStorage genreStorage, MpaStorage mpaStorage) {

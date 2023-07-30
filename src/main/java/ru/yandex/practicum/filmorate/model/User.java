@@ -2,7 +2,9 @@ package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -15,7 +17,9 @@ import java.util.Map;
 import java.util.Set;
 
 @Builder
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode
 public class User {
 
     private long id;
