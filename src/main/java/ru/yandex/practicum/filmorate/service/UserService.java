@@ -1,28 +1,22 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserStorage userStorage;
 
-    @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
-    }
-
-    public User findUser(int id) {
+    public User findUser(long id) {
         return userStorage.findUser(id);
     }
 
@@ -32,79 +26,44 @@ public class UserService {
 
     public User createUser(User user) {
         validate(user);
-        userStorage.createUser(user);
-        return user;
+        return userStorage.createUser(user);
     }
 
     public User updateUser(User user) {
         validate(user);
-        userStorage.updateUser(user);
-        return user;
+        return userStorage.updateUser(user);
     }
 
-    public void deleteUser(int id) {
-        User userToDelete = userStorage.findUser(id);
-        if (userToDelete != null) {
-            for (Long friendId : userToDelete.getFriends()) {
-                User friend = userStorage.findUser(friendId);
-                if (friend != null) {
-                    friend.getFriends().removeIf(tempId -> tempId == id);
-                }
-            }
-            userStorage.deleteUser(id);
-        }
+    public void deleteUser(long id) {
+        userStorage.deleteUser(id);
     }
 
-    public void addFriend(int id, int friendId) {
-        User user = userStorage.findUser(id);
-        User friend = userStorage.findUser(friendId);
-
-        if (user != null && friend != null) {
-            user.getFriends().add((long) friendId);
-            friend.getFriends().add((long) id);
-            log.info("Пользователи с id: {} и {} стали друзьями.", id, friendId);
-        }
+    public void addFriend(long id, long friendId) {
+        userStorage.addFriend(id, friendId);
     }
 
-    public void deleteFriend(int id, int friendId) {
-        User user = userStorage.findUser(id);
-        User friend = userStorage.findUser(friendId);
-
-        if (user != null && friend != null) {
-            user.getFriends().remove(user.getId());
-            friend.getFriends().remove(user.getId());
-            log.info("Пользователь удален из списка друзей.");
-        }
+    public void deleteFriend(long id, long friendId) {
+        userStorage.deleteFriend(id, friendId);
     }
 
-    public List<User> getFriends(int id) {
-        User user = userStorage.findUser(id);
-        List<User> userFriends = findAllUsers().stream()
-                .filter(u -> user.getFriends().contains(u.getId()))
-                .collect(Collectors.toList());
-
-        log.info("Количество друзей у пользователя {}: {}.", user.getName(), userFriends.size());
-        return userFriends;
+    public Collection<User> getFriends(long id) {
+        return userStorage.getFriends(id);
     }
 
-    public List<User> getCommonFriends(int id, int otherId) {
-        List<User> userFriends = getFriends(id);
-        List<User> otherUserFriends = getFriends(otherId);
-        List<User> commonFriends = userFriends.stream()
-                .filter(otherUserFriends::contains)
-                .collect(Collectors.toList());
-        log.info("Количество общих друзей: {}.", commonFriends.size());
-        return commonFriends;
+    public Collection<User> getCommonFriends(long id, long otherId) {
+        return userStorage.getCommonFriends(id, otherId);
     }
 
     private void validate(User user) {
-        if (user.getLogin().contains(" ")) {
-            log.info("Логин не может содержать пробелы: {}.", user.getLogin());
-            throw new ValidationException("Логин не может содержать пробелы.");
+        String login = user.getLogin();
+        if (login.contains(" ")) {
+            log.info("Login cannot contain spaces: {}.", login);
+            throw new ValidationException("Login cannot contain spaces.");
         }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.info("Автоматически добавлено имя пользователя: {}.", user.getName());
+        String name = user.getName();
+        if (name == null || name.isBlank()) {
+            user.setName(login);
+            log.info("Automatically added user name: {}.", login);
         }
     }
 }
